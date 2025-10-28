@@ -103,6 +103,37 @@ export const bookAPI = {
       console.error('Error searching by subject:', error);
       throw new Error('Failed to search by subject');
     }
+  },
+
+  // Get search suggestions as user types
+  getSuggestions: async (query, limit = 8) => {
+    try {
+      if (!query || query.trim().length < 2) {
+        return [];
+      }
+
+      const encodedQuery = encodeURIComponent(query.trim());
+      const url = `${BASE_URL}/search.json?title=${encodedQuery}&limit=${limit}&fields=title,author_name`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Return formatted suggestions with title and author
+      return (data.docs || []).map(book => ({
+        title: book.title || 'Unknown Title',
+        author: book.author_name?.[0] || 'Unknown Author',
+        fullText: `${book.title || 'Unknown Title'} by ${book.author_name?.[0] || 'Unknown Author'}`
+      }));
+      
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      return []; // Return empty array on error, don't break the UI
+    }
   }
 };
 

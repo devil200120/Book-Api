@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   MagnifyingGlassIcon,
   SparklesIcon,
   BookOpenIcon,
 } from "@heroicons/react/24/outline";
+import { bookAPI } from "../services/bookAPI";
 
 const SearchBar = ({ onSearch, isLoading, hasResults }) => {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,6 +31,50 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
     setQuery(suggestion);
     onSearch(suggestion);
     setShowSuggestions(false);
+  };
+
+  // Debounced function to fetch suggestions
+  const fetchSuggestions = useCallback(async (searchQuery) => {
+    if (searchQuery.length < 2) {
+      setSuggestions([]);
+      setLoadingSuggestions(false);
+      return;
+    }
+
+    setLoadingSuggestions(true);
+    try {
+      const results = await bookAPI.getSuggestions(searchQuery);
+      setSuggestions(results);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      setSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, []);
+
+  // Debounce effect for suggestions
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (query.trim() && isFocused) {
+        fetchSuggestions(query.trim());
+      }
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timeoutId);
+  }, [query, isFocused, fetchSuggestions]);
+
+  // Handle input change
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+    
+    if (value.trim().length >= 2) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+      setSuggestions([]);
+    }
   };
 
   return (
@@ -103,7 +150,7 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
               <input
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 onFocus={() => {
                   setIsFocused(true);
@@ -144,6 +191,52 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
             </div>
 
             {/* Auto-suggestions Dropdown */}
+            {showSuggestions && !isLoading && query.length >= 2 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden z-[9999] animate-slide-up max-h-80 overflow-y-auto">
+                <div className="p-3 md:p-4 bg-white">
+                  {loadingSuggestions ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span className="text-sm text-gray-600">Searching...</span>
+                    </div>
+                  ) : suggestions.length > 0 ? (
+                    <>
+                      <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3 font-medium">
+                        📚 Suggestions from Open Library:
+                      </p>
+                      <div className="space-y-1 md:space-y-2">
+                        {suggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handleSuggestionClick(suggestion.title);
+                            }}
+                            className="w-full text-left px-2 py-1.5 md:px-3 md:py-2 text-sm md:text-base text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg transition-all duration-200 flex items-center space-x-2 md:space-x-3 group border-b border-gray-100 last:border-b-0"
+                          >
+                            <MagnifyingGlassIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-400 group-hover:text-primary-500 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate group-hover:font-semibold">
+                                {suggestion.title}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                by {suggestion.author}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center py-4">
+                      <span className="text-sm text-gray-500">No suggestions found</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Static suggestions when no query */}
             {showSuggestions && !isLoading && !hasResults && query === "" && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden z-[9999] animate-slide-up max-h-80 overflow-y-auto">
                 <div className="p-3 md:p-4 bg-white">
