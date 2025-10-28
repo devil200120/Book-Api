@@ -113,12 +113,24 @@ const BookDetailsModal = ({ book, isOpen, onClose }) => {
             {/* Book Cover Section */}
             <div className="lg:w-2/5 bg-gradient-to-br from-gray-100 to-gray-200 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
               <div className="relative max-w-xs sm:max-w-sm">
+                {/* Single Clean Loading State */}
                 {imageLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="loading-spinner"></div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl sm:rounded-2xl shadow-2xl z-10">
+                    <div className="text-center">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-white/40 rounded-full mb-4">
+                        <BookOpenIcon className="w-8 h-8 text-primary-600 animate-pulse" />
+                      </div>
+                      <p className="text-sm text-gray-700 font-medium">Loading book cover</p>
+                      <div className="mt-3 flex justify-center space-x-1">
+                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
+                {/* Book Cover Image */}
                 <img
                   src={!imageError && coverUrl ? coverUrl : defaultCover}
                   alt={`Cover of ${title}`}

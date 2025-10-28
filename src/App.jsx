@@ -2,15 +2,20 @@ import { useState } from "react";
 import SearchBar from "./components/SearchBar";
 import BookList from "./components/BookList";
 import BookDetailsModal from "./components/BookDetailsModal";
+import FilterSection from "./components/FilterSection";
 import Pagination from "./components/Pagination";
 import { bookAPI, bookUtils } from "./services/bookAPI";
 
 function App() {
   const [books, setBooks] = useState([]);
+  const [filteredBooks, setFilteredBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+
+  // Filter state
+  const [showFilters, setShowFilters] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,11 +60,17 @@ function App() {
       console.log("Search result:", result);
 
       setBooks(result.books);
+      setFilteredBooks(result.books); // Initialize filtered books
       setTotalResults(result.totalResults);
       setTotalPages(result.totalPages);
       setCurrentPage(result.currentPage);
       setHasNextPage(result.hasNextPage);
       setHasPrevPage(result.hasPrevPage);
+
+      // Show filters if books are found
+      if (result.books.length > 0) {
+        setShowFilters(true);
+      }
 
       // If no books found, show appropriate message
       if (result.books.length === 0) {
@@ -69,14 +80,24 @@ function App() {
       console.error("Search error:", err);
       setError(err.message);
       setBooks([]);
+      setFilteredBooks([]);
       setTotalResults(0);
       setTotalPages(0);
       setCurrentPage(1);
       setHasNextPage(false);
       setHasPrevPage(false);
+      setShowFilters(false);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFilteredBooks = (filtered) => {
+    setFilteredBooks(filtered);
+  };
+
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
   };
 
   const handlePageChange = (newPage) => {
@@ -130,24 +151,37 @@ function App() {
         {/* Results Section */}
         <main className="pb-8 sm:pb-12 md:pb-16">
           <div className="container mx-auto px-3 sm:px-4">
+            {/* Filter Section */}
+            {hasSearched && books.length > 0 && (
+              <FilterSection
+                books={books}
+                onFilteredBooks={handleFilteredBooks}
+                isVisible={showFilters}
+                onToggle={toggleFilters}
+              />
+            )}
+
             <BookList
-              books={books}
+              books={filteredBooks}
               isLoading={isLoading}
               error={error}
               searchQuery={searchQuery}
               hasSearched={hasSearched}
               onBookClick={handleBookClick}
+              showFilterToggle={hasSearched && books.length > 0}
+              onToggleFilters={toggleFilters}
+              filtersVisible={showFilters}
             />
 
             {/* Pagination */}
-            {!isLoading && !error && books.length > 0 && (
+            {!isLoading && !error && filteredBooks.length > 0 && (
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 hasNextPage={hasNextPage}
                 hasPrevPage={hasPrevPage}
                 onPageChange={handlePageChange}
-                totalResults={totalResults}
+                totalResults={filteredBooks.length}
                 isLoading={isLoading}
               />
             )}

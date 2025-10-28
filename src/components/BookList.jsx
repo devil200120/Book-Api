@@ -2,9 +2,19 @@ import BookCard from "./BookCard";
 import {
   BookOpenIcon,
   ExclamationTriangleIcon,
+  FunnelIcon,
 } from "@heroicons/react/24/outline";
 
-const BookList = ({ books, isLoading, error, searchQuery, onBookClick }) => {
+const BookList = ({ 
+  books, 
+  isLoading, 
+  error, 
+  searchQuery, 
+  onBookClick,
+  showFilterToggle = false,
+  onToggleFilters,
+  filtersVisible = false
+}) => {
   // Loading State
   if (isLoading) {
     return (
@@ -90,9 +100,26 @@ const BookList = ({ books, isLoading, error, searchQuery, onBookClick }) => {
       <div className="w-full max-w-7xl mx-auto animate-fade-in">
         {/* Results Header */}
         <div className="text-center mb-8 sm:mb-10 md:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-secondary-800 mb-4">
-            Search Results
-          </h2>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-secondary-800">
+              Search Results
+            </h2>
+            {showFilterToggle && (
+              <button
+                onClick={onToggleFilters}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
+                  filtersVisible
+                    ? 'bg-primary-100 text-primary-700 border-2 border-primary-200'
+                    : 'bg-white/70 text-gray-600 border-2 border-white/20 hover:bg-white/90'
+                }`}
+              >
+                <FunnelIcon className="w-5 h-5" />
+                <span className="hidden sm:inline">
+                  {filtersVisible ? 'Hide Filters' : 'Show Filters'}
+                </span>
+              </button>
+            )}
+          </div>
           <p className="text-base sm:text-lg text-secondary-600">
             Found{" "}
             <span className="font-semibold text-primary-600">

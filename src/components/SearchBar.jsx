@@ -3,6 +3,8 @@ import {
   MagnifyingGlassIcon,
   SparklesIcon,
   BookOpenIcon,
+  ClockIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { bookAPI } from "../services/bookAPI";
 
@@ -12,10 +14,64 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [recentSearches, setRecentSearches] = useState([]);
+
+  // Load recent searches from localStorage on component mount
+  useEffect(() => {
+    const saved = localStorage.getItem("bookfinder-recent-searches");
+    if (saved) {
+      try {
+        setRecentSearches(JSON.parse(saved));
+      } catch (error) {
+        console.error("Error loading recent searches:", error);
+      }
+    }
+  }, []);
+
+  // Save recent searches to localStorage
+  const saveRecentSearch = (searchTerm) => {
+    const trimmed = searchTerm.trim();
+    if (!trimmed || trimmed.length < 2) return;
+
+    setRecentSearches((prev) => {
+      // Remove if already exists to avoid duplicates
+      const filtered = prev.filter(
+        (item) => item.toLowerCase() !== trimmed.toLowerCase()
+      );
+      // Add to beginning and limit to 8 items
+      const updated = [trimmed, ...filtered].slice(0, 8);
+
+      // Save to localStorage
+      localStorage.setItem(
+        "bookfinder-recent-searches",
+        JSON.stringify(updated)
+      );
+      return updated;
+    });
+  };
+
+  // Clear all recent searches
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem("bookfinder-recent-searches");
+  };
+
+  // Remove a specific recent search
+  const removeRecentSearch = (searchToRemove) => {
+    setRecentSearches((prev) => {
+      const updated = prev.filter((item) => item !== searchToRemove);
+      localStorage.setItem(
+        "bookfinder-recent-searches",
+        JSON.stringify(updated)
+      );
+      return updated;
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
+      saveRecentSearch(query.trim()); // Save to recent searches
       onSearch(query.trim());
       setShowSuggestions(false);
     }
@@ -29,6 +85,7 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
 
   const handleSuggestionClick = (suggestion) => {
     setQuery(suggestion);
+    saveRecentSearch(suggestion); // Save to recent searches
     onSearch(suggestion);
     setShowSuggestions(false);
   };
@@ -46,7 +103,7 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
       const results = await bookAPI.getSuggestions(searchQuery);
       setSuggestions(results);
     } catch (error) {
-      console.error('Error fetching suggestions:', error);
+      console.error("Error fetching suggestions:", error);
       setSuggestions([]);
     } finally {
       setLoadingSuggestions(false);
@@ -68,7 +125,7 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
   const handleInputChange = (e) => {
     const value = e.target.value;
     setQuery(value);
-    
+
     if (value.trim().length >= 2) {
       setShowSuggestions(true);
     } else {
@@ -161,7 +218,7 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
                   setTimeout(() => setShowSuggestions(false), 200);
                 }}
                 placeholder="Search books..."
-                className="input-primary pl-10 pr-20 py-3 md:pl-14 md:pr-36 md:py-4 text-base md:text-lg font-medium placeholder:text-base md:placeholder:text-lg placeholder:font-normal w-full"
+                className="w-full pl-10 pr-20 py-3 md:pl-14 md:pr-36 md:py-4 text-base md:text-lg font-medium bg-transparent border-none outline-none focus:outline-none focus:ring-0 placeholder:text-gray-500 placeholder:text-base md:placeholder:text-lg placeholder:font-normal"
                 disabled={isLoading}
               />
 
@@ -192,19 +249,21 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
 
             {/* Auto-suggestions Dropdown */}
             {showSuggestions && !isLoading && query.length >= 2 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden z-[9999] animate-slide-up max-h-80 overflow-y-auto">
-                <div className="p-3 md:p-4 bg-white">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden z-[9999] animate-slide-up max-h-60 overflow-y-auto">
+                <div className="p-2 md:p-3 bg-white">
                   {loadingSuggestions ? (
-                    <div className="flex items-center justify-center py-4">
+                    <div className="flex items-center justify-center py-3">
                       <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                      <span className="text-sm text-gray-600">Searching...</span>
+                      <span className="text-sm text-gray-600">
+                        Searching...
+                      </span>
                     </div>
                   ) : suggestions.length > 0 ? (
                     <>
-                      <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3 font-medium">
+                      <p className="text-xs md:text-sm text-gray-600 mb-1.5 md:mb-2 font-medium">
                         📚 Suggestions from Open Library:
                       </p>
-                      <div className="space-y-1 md:space-y-2">
+                      <div className="space-y-0.5 md:space-y-1">
                         {suggestions.map((suggestion, index) => (
                           <button
                             key={index}
@@ -212,7 +271,7 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
                               e.preventDefault();
                               handleSuggestionClick(suggestion.title);
                             }}
-                            className="w-full text-left px-2 py-1.5 md:px-3 md:py-2 text-sm md:text-base text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg transition-all duration-200 flex items-center space-x-2 md:space-x-3 group border-b border-gray-100 last:border-b-0"
+                            className="w-full text-left px-2 py-1 md:px-2.5 md:py-1.5 text-sm md:text-base text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg transition-all duration-200 flex items-center space-x-2 md:space-x-3 group border-b border-gray-100 last:border-b-0"
                           >
                             <MagnifyingGlassIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-400 group-hover:text-primary-500 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
@@ -228,22 +287,67 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
                       </div>
                     </>
                   ) : (
-                    <div className="flex items-center justify-center py-4">
-                      <span className="text-sm text-gray-500">No suggestions found</span>
+                    <div className="flex items-center justify-center py-3">
+                      <span className="text-sm text-gray-500">
+                        No suggestions found
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Static suggestions when no query */}
+            {/* Recent and Popular suggestions when no query */}
             {showSuggestions && !isLoading && !hasResults && query === "" && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden z-[9999] animate-slide-up max-h-80 overflow-y-auto">
-                <div className="p-3 md:p-4 bg-white">
-                  <p className="text-xs md:text-sm text-gray-600 mb-2 md:mb-3 font-medium">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden z-[9999] animate-slide-up max-h-60 overflow-y-auto">
+                <div className="p-2 md:p-3 bg-white">
+                  {/* Recent Searches Section */}
+                  {recentSearches.length > 0 && (
+                    <>
+                      <div className="flex items-center justify-between mb-1.5 md:mb-2">
+                        <p className="text-xs md:text-sm text-gray-600 font-medium flex items-center">
+                          <ClockIcon className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                          Recent searches
+                        </p>
+                        <button
+                          onClick={clearRecentSearches}
+                          className="text-xs text-gray-500 hover:text-red-500 transition-colors"
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                      <div className="space-y-0.5 md:space-y-1 mb-3">
+                        {recentSearches.map((search, index) => (
+                          <div key={index} className="flex items-center group">
+                            <button
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                handleSuggestionClick(search);
+                              }}
+                              className="flex-1 text-left px-2 py-1 md:px-2.5 md:py-1.5 text-sm md:text-base text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg transition-all duration-200 flex items-center space-x-2 md:space-x-3"
+                            >
+                              <ClockIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-400 group-hover:text-primary-500 flex-shrink-0" />
+                              <span className="group-hover:font-medium truncate">
+                                {search}
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => removeRecentSearch(search)}
+                              className="p-1 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <XMarkIcon className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Popular Searches Section */}
+                  <p className="text-xs md:text-sm text-gray-600 mb-1.5 md:mb-2 font-medium">
                     ✨ Popular searches:
                   </p>
-                  <div className="space-y-1 md:space-y-2">
+                  <div className="space-y-0.5 md:space-y-1">
                     {[
                       "Harry Potter",
                       "The Great Gatsby",
@@ -258,7 +362,7 @@ const SearchBar = ({ onSearch, isLoading, hasResults }) => {
                           e.preventDefault();
                           handleSuggestionClick(suggestion);
                         }}
-                        className="w-full text-left px-2 py-1.5 md:px-3 md:py-2 text-sm md:text-base text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg transition-all duration-200 flex items-center space-x-2 md:space-x-3 group border-b border-gray-100 last:border-b-0"
+                        className="w-full text-left px-2 py-1 md:px-2.5 md:py-1.5 text-sm md:text-base text-gray-700 hover:bg-primary-50 hover:text-primary-700 rounded-lg transition-all duration-200 flex items-center space-x-2 md:space-x-3 group border-b border-gray-100 last:border-b-0"
                       >
                         <MagnifyingGlassIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-400 group-hover:text-primary-500 flex-shrink-0" />
                         <span className="group-hover:font-medium truncate">
