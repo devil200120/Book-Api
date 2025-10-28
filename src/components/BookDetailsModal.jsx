@@ -110,21 +110,29 @@ const BookDetailsModal = ({ book, isOpen, onClose }) => {
 
           {/* Modal Content */}
           <div className="flex flex-col lg:flex-row">
-            {/* Book Cover Section */}
-            <div className="lg:w-2/5 bg-gradient-to-br from-gray-100 to-gray-200 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-              <div className="relative max-w-xs sm:max-w-sm">
-                {/* Single Clean Loading State */}
+            {/* Book Cover Section - Mobile Optimized */}
+            <div className="lg:w-2/5 bg-gradient-to-br from-gray-100 to-gray-200 p-3 sm:p-4 lg:p-6 xl:p-8 flex items-center justify-center min-h-[250px] sm:min-h-[300px] lg:min-h-0">
+              <div className="relative w-full max-w-[200px] sm:max-w-xs lg:max-w-sm mx-auto">
+                {/* Mobile-Optimized Loading State */}
                 {imageLoading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl sm:rounded-2xl shadow-2xl z-10">
-                    <div className="text-center">
-                      <div className="inline-flex items-center justify-center w-16 h-16 bg-white/40 rounded-full mb-4">
-                        <BookOpenIcon className="w-8 h-8 text-primary-600 animate-pulse" />
+                    <div className="text-center px-4 py-2">
+                      <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-white/40 rounded-full mb-3 sm:mb-4">
+                        <BookOpenIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary-600 animate-pulse" />
                       </div>
-                      <p className="text-sm text-gray-700 font-medium">Loading book cover</p>
-                      <div className="mt-3 flex justify-center space-x-1">
-                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <p className="text-xs sm:text-sm text-gray-700 font-medium px-2">
+                        Loading book cover
+                      </p>
+                      <div className="mt-2 sm:mt-3 flex justify-center space-x-1">
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-500 rounded-full animate-bounce"></div>
+                        <div
+                          className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-500 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-500 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
                       </div>
                     </div>
                   </div>
@@ -141,24 +149,24 @@ const BookDetailsModal = ({ book, isOpen, onClose }) => {
                   onError={handleImageError}
                 />
 
-                {/* Floating Action Buttons */}
-                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 space-y-2">
+                {/* Mobile-Optimized Floating Action Buttons */}
+                <div className="absolute top-2 right-2 sm:top-3 sm:right-3 lg:top-4 lg:right-4 space-y-1 sm:space-y-2">
                   <button
                     onClick={toggleLike}
-                    className="p-2 sm:p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 hover:scale-110"
+                    className="p-1.5 sm:p-2 lg:p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 hover:scale-110 touch-manipulation"
                   >
                     {isLiked ? (
-                      <HeartIconSolid className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
+                      <HeartIconSolid className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-red-500" />
                     ) : (
-                      <HeartIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                      <HeartIcon className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-gray-600" />
                     )}
                   </button>
 
                   <button
                     onClick={shareBook}
-                    className="p-2 sm:p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 hover:scale-110"
+                    className="p-1.5 sm:p-2 lg:p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300 hover:scale-110 touch-manipulation"
                   >
-                    <ShareIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+                    <ShareIcon className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 text-gray-600" />
                   </button>
                 </div>
               </div>

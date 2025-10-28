@@ -7,8 +7,10 @@ import Pagination from "./components/Pagination";
 import { bookAPI, bookUtils } from "./services/bookAPI";
 
 function App() {
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState([]); // Current page books
+  const [allBooksForFiltering, setAllBooksForFiltering] = useState([]); // All books for filtering
   const [filteredBooks, setFilteredBooks] = useState([]);
+  const [paginatedFilteredBooks, setPaginatedFilteredBooks] = useState([]); // Current page of filtered books
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,6 +18,7 @@ function App() {
 
   // Filter state
   const [showFilters, setShowFilters] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,11 +27,33 @@ function App() {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPrevPage, setHasPrevPage] = useState(false);
 
+  // Filter pagination state
+  const [filteredCurrentPage, setFilteredCurrentPage] = useState(1);
+  const [filteredTotalPages, setFilteredTotalPages] = useState(0);
+
   // Modal state
   const [selectedBook, setSelectedBook] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const BOOKS_PER_PAGE = 20;
+
+  // Fetch multiple pages of books for filtering
+  const fetchBooksForFiltering = async (query, maxPages = 5) => {
+    const allBooks = [];
+    try {
+      for (let page = 1; page <= maxPages; page++) {
+        const result = await bookAPI.searchBooks(query, BOOKS_PER_PAGE, page);
+        if (result.books.length === 0) break;
+        allBooks.push(...result.books);
+        
+        // If we've reached the end of results, stop
+        if (!result.hasNextPage) break;
+      }
+    } catch (error) {
+      console.error("Error fetching books for filtering:", error);
+    }
+    return allBooks;
+  };
 
   const handleSearch = async (query, page = 1) => {
     // Validate search query
@@ -41,11 +66,18 @@ function App() {
     setIsLoading(true);
     setError(null);
 
-    // If it's a new search (page 1), reset pagination
+    // If it's a new search (page 1), reset everything
     if (page === 1) {
       setSearchQuery(validation.query);
       setHasSearched(true);
       setCurrentPage(1);
+      setFilteredCurrentPage(1);
+      setShowFilters(false);
+      setIsFiltering(false);
+      
+      // Fetch books for filtering (multiple pages)
+      const booksForFiltering = await fetchBooksForFiltering(validation.query);
+      setAllBooksForFiltering(booksForFiltering);
     }
 
     try {
@@ -60,33 +92,33 @@ function App() {
       console.log("Search result:", result);
 
       setBooks(result.books);
-      setFilteredBooks(result.books); // Initialize filtered books
+      setFilteredBooks(allBooksForFiltering.length > 0 ? allBooksForFiltering : result.books);
+      setPaginatedFilteredBooks(result.books);
       setTotalResults(result.totalResults);
       setTotalPages(result.totalPages);
       setCurrentPage(result.currentPage);
       setHasNextPage(result.hasNextPage);
       setHasPrevPage(result.hasPrevPage);
 
-      // Show filters if books are found
-      if (result.books.length > 0) {
-        setShowFilters(true);
-      }
-
       // If no books found, show appropriate message
       if (result.books.length === 0) {
-        setError(null); // Don't set error, let BookList handle the no results state
+        setError(null);
       }
     } catch (err) {
       console.error("Search error:", err);
       setError(err.message);
       setBooks([]);
+      setAllBooksForFiltering([]);
       setFilteredBooks([]);
+      setPaginatedFilteredBooks([]);
       setTotalResults(0);
       setTotalPages(0);
       setCurrentPage(1);
+      setFilteredCurrentPage(1);
       setHasNextPage(false);
       setHasPrevPage(false);
       setShowFilters(false);
+      setIsFiltering(false);
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +126,18 @@ function App() {
 
   const handleFilteredBooks = (filtered) => {
     setFilteredBooks(filtered);
+    setIsFiltering(filtered.length !== allBooksForFiltering.length);
+    
+    // Reset to page 1 when filters change
+    setFilteredCurrentPage(1);
+    
+    // Paginate filtered results
+    const startIndex = 0; // Always start from page 1
+    const endIndex = BOOKS_PER_PAGE;
+    const paginatedBooks = filtered.slice(startIndex, endIndex);
+    
+    setPaginatedFilteredBooks(paginatedBooks);
+    setFilteredTotalPages(Math.ceil(filtered.length / BOOKS_PER_PAGE));
   };
 
   const toggleFilters = () => {
@@ -101,20 +145,27 @@ function App() {
   };
 
   const handlePageChange = (newPage) => {
-    if (
-      newPage < 1 ||
-      newPage > totalPages ||
-      newPage === currentPage ||
-      isLoading
-    ) {
-      return;
+    if (isFiltering) {
+      // Handle filtered pagination
+      setFilteredCurrentPage(newPage);
+      const startIndex = (newPage - 1) * BOOKS_PER_PAGE;
+      const endIndex = startIndex + BOOKS_PER_PAGE;
+      const paginatedBooks = filteredBooks.slice(startIndex, endIndex);
+      setPaginatedFilteredBooks(paginatedBooks);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      // Handle normal pagination
+      if (
+        newPage < 1 ||
+        newPage > totalPages ||
+        newPage === currentPage ||
+        isLoading
+      ) {
+        return;
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      handleSearch(searchQuery, newPage);
     }
-
-    // Scroll to top when changing pages
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    // Perform search for the new page
-    handleSearch(searchQuery, newPage);
   };
 
   const handleBookClick = (book) => {
@@ -152,36 +203,37 @@ function App() {
         <main className="pb-8 sm:pb-12 md:pb-16">
           <div className="container mx-auto px-3 sm:px-4">
             {/* Filter Section */}
-            {hasSearched && books.length > 0 && (
+            {hasSearched && allBooksForFiltering.length > 0 && (
               <FilterSection
-                books={books}
+                books={allBooksForFiltering}
                 onFilteredBooks={handleFilteredBooks}
                 isVisible={showFilters}
                 onToggle={toggleFilters}
+                searchQuery={searchQuery} // Pass searchQuery to detect new searches
               />
             )}
 
             <BookList
-              books={filteredBooks}
+              books={isFiltering ? paginatedFilteredBooks : books}
               isLoading={isLoading}
               error={error}
               searchQuery={searchQuery}
               hasSearched={hasSearched}
               onBookClick={handleBookClick}
-              showFilterToggle={hasSearched && books.length > 0}
+              showFilterToggle={hasSearched && allBooksForFiltering.length > 0}
               onToggleFilters={toggleFilters}
               filtersVisible={showFilters}
             />
 
             {/* Pagination */}
-            {!isLoading && !error && filteredBooks.length > 0 && (
+            {!isLoading && !error && (isFiltering ? paginatedFilteredBooks.length > 0 : books.length > 0) && (
               <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                hasNextPage={hasNextPage}
-                hasPrevPage={hasPrevPage}
+                currentPage={isFiltering ? filteredCurrentPage : currentPage}
+                totalPages={isFiltering ? filteredTotalPages : totalPages}
+                hasNextPage={isFiltering ? (filteredCurrentPage < filteredTotalPages) : hasNextPage}
+                hasPrevPage={isFiltering ? (filteredCurrentPage > 1) : hasPrevPage}
                 onPageChange={handlePageChange}
-                totalResults={filteredBooks.length}
+                totalResults={isFiltering ? filteredBooks.length : totalResults}
                 isLoading={isLoading}
               />
             )}

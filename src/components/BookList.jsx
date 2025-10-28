@@ -5,15 +5,15 @@ import {
   FunnelIcon,
 } from "@heroicons/react/24/outline";
 
-const BookList = ({ 
-  books, 
-  isLoading, 
-  error, 
-  searchQuery, 
+const BookList = ({
+  books,
+  isLoading,
+  error,
+  searchQuery,
   onBookClick,
   showFilterToggle = false,
   onToggleFilters,
-  filtersVisible = false
+  filtersVisible = false,
 }) => {
   // Loading State
   if (isLoading) {
@@ -109,13 +109,13 @@ const BookList = ({
                 onClick={onToggleFilters}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
                   filtersVisible
-                    ? 'bg-primary-100 text-primary-700 border-2 border-primary-200'
-                    : 'bg-white/70 text-gray-600 border-2 border-white/20 hover:bg-white/90'
+                    ? "bg-primary-100 text-primary-700 border-2 border-primary-200"
+                    : "bg-white/70 text-gray-600 border-2 border-white/20 hover:bg-white/90"
                 }`}
               >
                 <FunnelIcon className="w-5 h-5" />
                 <span className="hidden sm:inline">
-                  {filtersVisible ? 'Hide Filters' : 'Show Filters'}
+                  {filtersVisible ? "Hide Filters" : "Show Filters"}
                 </span>
               </button>
             )}
